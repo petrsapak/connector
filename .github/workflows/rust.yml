@@ -1,19 +1,19 @@
-name: Rust
+name: Rust CI/CD
 
 on:
   push:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
+  release:
+    types: [ created ]
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
   build:
-
     runs-on: windows-latest
-
     steps:
     - uses: actions/checkout@v3
     - name: Build
@@ -24,9 +24,10 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: connector
-        path: target/debug/connector*.exe
+        path: target/debug/connector.exe
 
   upload-release-asset:
+    if: github.event_name == 'release'
     needs: build
     runs-on: windows-latest
     steps:
