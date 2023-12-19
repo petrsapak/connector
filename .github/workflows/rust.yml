@@ -21,11 +21,10 @@ jobs:
     - name: Run tests
       run: cargo test --verbose
     - name: Upload artifacts
-      if: startsWith(github.event.pull_request.labels.*.name, 'v')
       uses: actions/upload-artifact@v2
       with:
         name: connector
-        path: target/debug/connector.exe
+        path: target/debug/connector*.exe
 
   upload-release-asset:
     needs: build
