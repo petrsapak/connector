@@ -9,13 +9,23 @@ fn main() -> std::io::Result<()> {
 
     const VERSION: &str = env!("CARGO_PKG_VERSION");
     const CONFIG_FILE_NAME: &str = "appconfig.json";
-    let appsettings_content = read_to_string(CONFIG_FILE_NAME)?;
+    let exe_path = std::env::current_exe()?;
+    let configuration_file_path = exe_path.parent().unwrap().join(CONFIG_FILE_NAME);
+    let appsettings_content = read_to_string(configuration_file_path)?;
     let appsettings: Value = serde_json::from_str(&appsettings_content)?;
     let username = appsettings["username"].as_str().unwrap_or_default();
 
     cliclack::intro(format!(" Connector v{} ({})", VERSION, username))?;
 
     let servers_from_json = appsettings["servers"].as_array().cloned().unwrap_or_default();
+
+    match servers_from_json {
+        servers if servers.is_empty() => {
+            cliclack::outro("No servers found in the configuration file.")?;
+            return Ok(());
+        },
+        _ => ()
+    }
 
     let mut multiselect = servers_from_json
         .iter()
