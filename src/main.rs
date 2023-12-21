@@ -21,7 +21,9 @@ fn main() -> std::io::Result<()> {
     let available_servers = servers_from_json
         .iter()
         .map(|server|
-            (server["name"].as_str().unwrap_or_default(), server["name"].as_str().unwrap_or_default(), server["description"].as_str().unwrap_or_default())
+            (server["name"].as_str().unwrap_or_default(),
+             server["name"].as_str().unwrap_or_default(),
+             server["description"].as_str().unwrap_or_default())
         );
 
     match servers_from_json {
