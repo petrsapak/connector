@@ -18,6 +18,13 @@ fn main() -> std::io::Result<()> {
     cliclack::intro(format!(" Connector v{} ({})", VERSION, username))?;
 
     let servers_from_json = appsettings["servers"].as_array().cloned().unwrap_or_default();
+    let available_servers = servers_from_json
+        .iter()
+        .map(|server|
+            (server["name"].as_str().unwrap_or_default(),
+             server["name"].as_str().unwrap_or_default(),
+             server["description"].as_str().unwrap_or_default())
+        );
 
     match servers_from_json {
         servers if servers.is_empty() => {
@@ -27,23 +34,17 @@ fn main() -> std::io::Result<()> {
         _ => ()
     }
 
-    let mut multiselect = servers_from_json
-        .iter()
-        .fold(cliclack::multiselect("Select servers to connect to"), |multiselect, server| {
-            let name = server["name"].as_str().unwrap_or_default();
-            let description = server["description"].as_str().unwrap_or_default();
-            multiselect.item(name, name, description)
-        });
-
-    let _servers = multiselect.interact()?;
+    let _selected_servers = cliclack::multiselect("Select servers to connect to")
+        .items(&available_servers.collect::<Vec<(_, _, _)>>())
+        .interact()?;
 
     let _password = cliclack::password("Provide password for the servers")
         .mask('#')
         .interact()?;
 
-    let number_of_servers = _servers.len();
+    let number_of_servers = _selected_servers.len();
 
-    for (index, server) in _servers.into_iter().enumerate() {
+    for (index, server) in _selected_servers.into_iter().enumerate() {
         let mut spinner = cliclack::spinner();
         spinner.start(format!("Connecting to {}", server));
         let connection_result = connect_to_server(&format!("\\\\{}", server), Some(username), Some(&_password));
