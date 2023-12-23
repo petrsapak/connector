@@ -17,58 +17,87 @@ fn main() -> std::io::Result<()> {
 
     cliclack::intro(format!(" Connector v{} ({})", VERSION, username))?;
 
-    let servers_from_json = appsettings["servers"].as_array().cloned().unwrap_or_default();
-    let available_servers = servers_from_json
-        .iter()
-        .map(|server|
-            (server["name"].as_str().unwrap_or_default(),
-             server["name"].as_str().unwrap_or_default(),
-             server["description"].as_str().unwrap_or_default())
-        );
+    let config_files = get_list_of_config_files();
 
-    match servers_from_json {
-        servers if servers.is_empty() => {
-            cliclack::outro("No servers found in the configuration file.")?;
-            return Ok(());
-        },
-        _ => ()
+    for config_file in config_files.iter() {
+        println!("{}", config_file);
     }
 
-    let _selected_servers = cliclack::multiselect("Select servers to connect to")
-        .items(&available_servers.collect::<Vec<(_, _, _)>>())
+    let available_config_files = config_files
+        .iter()
+        .map(|config_file|
+            (config_file.as_str(), config_file.as_str(), "")
+        );
+
+    let config_file_paths = get_list_of_config_file_paths();
+
+    for config_file_path in config_file_paths.iter() {
+        println!("{}", config_file_path);
+    }
+
+    let _ = config_file_paths.iter().fold(Ok(()), |_, config_file_path| {
+        match validate_config_file(&config_file_path) {
+            Ok(_) => Ok(()),
+            Err(error_message) => {
+                return cliclack::outro(error_message);
+            }
+        }
+    });
+
+    let valid_config_file_paths = config_file_paths
+        .iter()
+        .filter(|config_file_path| validate_config_file(&config_file_path).is_ok())
+        .map(|config_file_path| (config_file_path.as_str(), config_file_path.as_str(), ""));
+
+    let _selected_configurations = cliclack::multiselect("Select configurations to use")
+        .items(&valid_config_file_paths.collect::<Vec<(_, _, _,)>>())
         .interact()?;
 
-    let _password = cliclack::password("Provide password for the servers")
-        .mask('#')
-        .interact()?;
+    for configuration in _selected_configurations {
+        let configuration_content = read_to_string(&configuration)?;
+        let configuration: Value = serde_json::from_str(&configuration_content)?;
+        let username = configuration["username"].as_str().unwrap_or_default();
+        let servers = configuration["servers"].as_array().cloned().unwrap_or_default();
+        let available_servers = servers
+            .iter()
+            .map(|server|
+                (server["name"].as_str().unwrap_or_default(),
+                server["name"].as_str().unwrap_or_default(),
+                server["description"].as_str().unwrap_or_default())
+        );
+        let _selected_servers = cliclack::multiselect("Select servers to connect to")
+            .items(&available_servers.collect::<Vec<(_, _, _)>>())
+            .interact()?;
+        let _password = cliclack::password("Provide password for the servers")
+            .mask('#')
+            .interact()?;
 
-    let number_of_servers = _selected_servers.len();
-
-    for (index, server) in _selected_servers.into_iter().enumerate() {
-        let mut spinner = cliclack::spinner();
-        spinner.start(format!("Connecting to {}", server));
-        let connection_result = connect_to_server(&format!("\\\\{}", server), Some(username), Some(&_password));
-
-        match connection_result {
-            Ok(_) => {
-                spinner.stop(style(format!("Connected to {}", server)).green().bold());
-            },
-            Err(error_code) => {
-                spinner.stop(style(format!("Failed to connect to {}. Error code: {}.", server, error_code)).red().bold());
-                if index == number_of_servers - 1 {
-                    cliclack::outro("Finished!")?;
-                    return Ok(());
-                }
-                let continue_with_next_server = cliclack::Confirm::new("Would you like to continue?")
-                    .interact()?;
-                if continue_with_next_server {
-                    continue;
-                } else {
-                    break;
+        let number_of_servers = _selected_servers.len();
+        for (index, server) in _selected_servers.into_iter().enumerate() {
+            let mut spinner = cliclack::spinner();
+            spinner.start(format!("Connecting to {}", server));
+            let connection_result = connect_to_server(&format!("\\\\{}", server), Some(username), Some(&_password));
+            match connection_result {
+                Ok(_) => {
+                    spinner.stop(style(format!("Connected to {}", server)).green().bold());
+                },
+                Err(error_code) => {
+                    spinner.stop(style(format!("Failed to connect to {}. Error code: {}.", server, error_code)).red().bold());
+                    if index == number_of_servers - 1 {
+                        cliclack::outro("Finished!")?;
+                        return Ok(());
+                    }
+                    let continue_with_next_server = cliclack::Confirm::new("Would you like to continue?")
+                        .interact().map_err(|e| e.to_string());
+                    if continue_with_next_server.unwrap() {
+                        continue;
+                    } else {
+                        break;
+                    }
                 }
             }
         }
-    }
+    };
 
     cliclack::outro(style("Finished!").yellow())?;
 
@@ -114,5 +143,53 @@ fn connect_to_server(server: &str, username: Option<&str>, password: Option<&str
     } else {
         Err(result as i32)
     }
+}
 
+fn get_list_of_config_files() -> Vec<String> {
+    let exe_path = std::env::current_exe().unwrap();
+    let exe_dir = exe_path.parent().unwrap();
+    let config_files = exe_dir
+        .read_dir()
+        .unwrap()
+        .filter_map(|entry| entry.ok())
+        .filter(|entry| entry.file_type().unwrap().is_file())
+        .filter(|entry| entry.path().extension().unwrap_or_default() == "json")
+        .map(|entry| entry.path().file_name().unwrap().to_str().unwrap().to_string())
+        .collect::<Vec<String>>();
+    config_files
+}
+
+fn get_list_of_config_file_paths() -> Vec<String> {
+    let exe_path = std::env::current_exe().unwrap();
+    let exe_dir = exe_path.parent().unwrap();
+    let config_file_paths = exe_dir
+        .read_dir()
+        .unwrap()
+        .filter_map(|entry| entry.ok())
+        .filter(|entry| entry.file_type().unwrap().is_file())
+        .filter(|entry| entry.path().extension().unwrap_or_default() == "json")
+        .map(|entry| entry.path().to_str().unwrap().to_string())
+        .collect::<Vec<String>>();
+    config_file_paths
+}
+
+fn validate_config_file(config_file_path: &str) -> Result<(), String> {
+    let config_file_content = read_to_string(config_file_path).unwrap();
+
+    let config_file: Result<Value, _> = serde_json::from_str(&config_file_content);
+    let config_file = match config_file {
+        Ok(config_file) => config_file,
+        Err(error) => {
+            return Err(format!("Validation of {} failed. Error: {}", config_file_path, error));
+        }
+    };
+
+    let servers = config_file["servers"].as_array().cloned().unwrap_or_default();
+
+    match servers {
+        servers if servers.is_empty() => {
+            Err(format!("Validation of {} failed. No servers found.", config_file_path))
+        },
+        _ => Ok(())
+    }
 }
