@@ -8,41 +8,22 @@ use serde_json::Value;
 fn main() -> std::io::Result<()> {
 
     const VERSION: &str = env!("CARGO_PKG_VERSION");
-    const CONFIG_FILE_NAME: &str = "appconfig.json";
-    let exe_path = std::env::current_exe()?;
-    let configuration_file_path = exe_path.parent().unwrap().join(CONFIG_FILE_NAME);
-    let appsettings_content = read_to_string(configuration_file_path)?;
-    let appsettings: Value = serde_json::from_str(&appsettings_content)?;
-    let username = appsettings["username"].as_str().unwrap_or_default();
-
-    cliclack::intro(format!(" Connector v{} ({})", VERSION, username))?;
-
-    let config_files = get_list_of_config_files();
-
-    for config_file in config_files.iter() {
-        println!("{}", config_file);
-    }
-
-    let available_config_files = config_files
-        .iter()
-        .map(|config_file|
-            (config_file.as_str(), config_file.as_str(), "")
-        );
+    cliclack::intro(style(format!(" Connector v{}", VERSION)).green().bold())?;
 
     let config_file_paths = get_list_of_config_file_paths();
 
-    for config_file_path in config_file_paths.iter() {
-        println!("{}", config_file_path);
-    }
-
-    let _ = config_file_paths.iter().fold(Ok(()), |_, config_file_path| {
-        match validate_config_file(&config_file_path) {
-            Ok(_) => Ok(()),
-            Err(error_message) => {
-                return cliclack::outro(error_message);
+    for config_file_path in &config_file_paths {
+        let mut validation_spinner = cliclack::spinner();
+        validation_spinner.start(format!("Validating {}", config_file_path));
+        match validate_config_file(config_file_path) {
+            Ok(_) => {
+                validation_spinner.stop(style(format!("Validated {}", config_file_path)).green().italic());
+            },
+            Err(error) => {
+                validation_spinner.stop(style(format!("{}", error)).yellow().italic());
             }
         }
-    });
+    }
 
     let valid_config_file_paths = config_file_paths
         .iter()
@@ -65,11 +46,11 @@ fn main() -> std::io::Result<()> {
                 server["name"].as_str().unwrap_or_default(),
                 server["description"].as_str().unwrap_or_default())
         );
-        let _selected_servers = cliclack::multiselect("Select servers to connect to")
+        let _selected_servers = cliclack::multiselect(format!("Select servers to connect to (as {})", username))
             .items(&available_servers.collect::<Vec<(_, _, _)>>())
             .interact()?;
         let _password = cliclack::password("Provide password for the servers")
-            .mask('#')
+            .mask('*')
             .interact()?;
 
         let number_of_servers = _selected_servers.len();
