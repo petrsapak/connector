@@ -12,22 +12,22 @@ fn main() -> std::io::Result<()> {
 
     let config_file_paths = get_list_of_config_file_paths();
 
-    for config_file_path in &config_file_paths {
-        let mut validation_spinner = cliclack::spinner();
-        validation_spinner.start(format!("Validating {}", config_file_path));
-        match validate_config_file(config_file_path) {
-            Ok(_) => {
-                validation_spinner.stop(style(format!("Validated {}", config_file_path)).green().italic());
-            },
-            Err(error) => {
-                validation_spinner.stop(style(format!("{}", error)).yellow().italic());
-            }
-        }
-    }
-
     let valid_config_file_paths = config_file_paths
         .iter()
-        .filter(|config_file_path| validate_config_file(&config_file_path).is_ok())
+        .filter(|config_file_path| {
+            let mut validation_spinner = cliclack::spinner();
+            validation_spinner.start(format!("Validating {}", config_file_path));
+            match validate_config_file(config_file_path) {
+                Ok(_) => {
+                    validation_spinner.stop(style(format!("Validated {}", config_file_path)).green().italic());
+                    return true;
+                },
+                Err(error) => {
+                    validation_spinner.stop(style(format!("{}", error)).yellow().italic());
+                    return false;
+                }
+            }
+        })
         .map(|config_file_path| (config_file_path.as_str(), config_file_path.as_str(), ""));
 
     let _selected_configurations = cliclack::multiselect("Select configurations to use")
@@ -124,20 +124,6 @@ fn connect_to_server(server: &str, username: Option<&str>, password: Option<&str
     } else {
         Err(result as i32)
     }
-}
-
-fn get_list_of_config_files() -> Vec<String> {
-    let exe_path = std::env::current_exe().unwrap();
-    let exe_dir = exe_path.parent().unwrap();
-    let config_files = exe_dir
-        .read_dir()
-        .unwrap()
-        .filter_map(|entry| entry.ok())
-        .filter(|entry| entry.file_type().unwrap().is_file())
-        .filter(|entry| entry.path().extension().unwrap_or_default() == "json")
-        .map(|entry| entry.path().file_name().unwrap().to_str().unwrap().to_string())
-        .collect::<Vec<String>>();
-    config_files
 }
 
 fn get_list_of_config_file_paths() -> Vec<String> {
