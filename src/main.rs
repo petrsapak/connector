@@ -34,6 +34,8 @@ fn main() -> std::io::Result<()> {
         .items(&valid_config_file_paths.collect::<Vec<(_, _, _,)>>())
         .interact()?;
 
+    let number_of_selected_configurations = _selected_configurations.len();
+
     for configuration in _selected_configurations {
         let configuration_content = read_to_string(&configuration)?;
         let configuration: Value = serde_json::from_str(&configuration_content)?;
@@ -43,29 +45,30 @@ fn main() -> std::io::Result<()> {
             .iter()
             .map(|server|
                 (server["name"].as_str().unwrap_or_default(),
-                server["name"].as_str().unwrap_or_default(),
-                server["description"].as_str().unwrap_or_default())
+                 server["name"].as_str().unwrap_or_default(),
+                 server["description"].as_str().unwrap_or_default())
         );
         let _selected_servers = cliclack::multiselect(format!("Select servers to connect to (as {})", username))
             .items(&available_servers.collect::<Vec<(_, _, _)>>())
             .interact()?;
+        let number_of_selected_servers = _selected_servers.len();
+
         let _password = cliclack::password("Provide password for the servers")
             .mask('*')
             .interact()?;
 
-        let number_of_servers = _selected_servers.len();
         for (index, server) in _selected_servers.into_iter().enumerate() {
             let mut spinner = cliclack::spinner();
-            spinner.start(format!("Connecting to {}", server));
+            spinner.start(format!("Connecting to {}...", server));
             let connection_result = connect_to_server(&format!("\\\\{}", server), Some(username), Some(&_password));
             match connection_result {
                 Ok(_) => {
-                    spinner.stop(style(format!("Connected to {}", server)).green().bold());
+                    spinner.stop(style(format!("Connected to {}.", server)).green().bold());
                 },
                 Err(error_code) => {
-                    spinner.stop(style(format!("Failed to connect to {}. Error code: {}.", server, error_code)).red().bold());
-                    if index == number_of_servers - 1 {
-                        cliclack::outro("Finished!")?;
+                    spinner.stop(style(format!("Failed to connect to {}. Error code: {}.", server, error_code)).red().italic());
+                    if index == number_of_selected_servers - 1 && index == number_of_selected_configurations {
+                        cliclack::outro(style("Finished!").yellow().italic())?;
                         return Ok(());
                     }
                     let continue_with_next_server = cliclack::Confirm::new("Would you like to continue?")
@@ -80,7 +83,7 @@ fn main() -> std::io::Result<()> {
         }
     };
 
-    cliclack::outro(style("Finished!").yellow())?;
+    cliclack::outro(style("Finished!").green().bold())?;
 
     Ok(())
 
