@@ -14,6 +14,7 @@ fn main() -> std::io::Result<()> {
     cliclack::intro(style(format!(" Connector v{}", VERSION)).green().bold())?;
 
     let mut valid_config_file_paths: Vec<(String, String, String)> = validation::invoke();
+    let mut selected_configurations: Vec<String> = Vec::new();
 
     match valid_config_file_paths.len() {
         0 => {
@@ -29,16 +30,19 @@ fn main() -> std::io::Result<()> {
                 }
             }
         },
-        _ => ()
+        1 => {
+            selected_configurations.push(valid_config_file_paths.first().unwrap().0.clone());
+        }
+        _ => {
+            selected_configurations = cliclack::multiselect("Which server list would you like to use?")
+                .items(&valid_config_file_paths)
+                .interact()?;
+        }
     }
 
-    let _selected_configurations = cliclack::multiselect("Which configurations would you like to use?")
-        .items(&valid_config_file_paths)
-        .interact()?;
+    let number_of_selected_configurations = selected_configurations.len();
 
-    let number_of_selected_configurations = _selected_configurations.len();
-
-    for configuration in _selected_configurations {
+    for configuration in selected_configurations {
         let configuration_content = read_to_string(&configuration)?;
         let configuration: Value = serde_json::from_str(&configuration_content)?;
         let username = configuration["username"].as_str().unwrap_or_default();
