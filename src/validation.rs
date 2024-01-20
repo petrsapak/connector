@@ -10,10 +10,10 @@ pub fn invoke() -> Vec<(String, String, String)> {
         .iter()
         .filter(|config_file_path| {
             let mut validation_spinner = cliclack::spinner();
-            validation_spinner.start(format!("Validating {}", config_file_path));
+            validation_spinner.start(format!("Validating server list: {}", config_file_path));
             match validate_config_file(config_file_path) {
                 Ok(_) => {
-                    validation_spinner.stop(style(format!("Validated {}", config_file_path)).green().italic());
+                    validation_spinner.stop(style(format!("Validated server list: {}", config_file_path)).green().italic());
                     return true;
                 },
                 Err(error) => {
