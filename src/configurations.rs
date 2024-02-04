@@ -6,7 +6,7 @@ use console::style;
 use serde_json::Value;
 use serde_json::json;
 
-pub fn invoke() -> std::io::Result<()> {
+pub fn create_configuration() -> std::io::Result<()> {
 
     let mut add_new_configuration = true;
 
