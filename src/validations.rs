@@ -62,3 +62,13 @@ fn validate_config_file(config_file_path: &str) -> Result<(), String> {
         _ => Ok(())
     }
 }
+
+pub fn validate_config_file_name(config_file_name: &str) -> Result<(), String> {
+    let invalid_characters = vec!["\\", "/", ":", "*", "?", "\"", "<", ">", "|"];
+    for invalid_character in invalid_characters {
+        if config_file_name.contains(invalid_character) {
+            return Err(format!("Invalid character in configuration name: {}", invalid_character));
+        }
+    }
+    return Ok(());
+}

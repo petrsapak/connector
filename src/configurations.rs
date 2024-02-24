@@ -6,6 +6,8 @@ use console::style;
 use serde_json::Value;
 use serde_json::json;
 
+use crate::validations;
+
 pub fn create_configuration() -> std::io::Result<()> {
 
     let mut add_new_configuration = true;
@@ -14,6 +16,15 @@ pub fn create_configuration() -> std::io::Result<()> {
         let new_configuration_name: String = cliclack::input("Enter configuration name")
             .placeholder("your-configuration-name")
             .interact()?;
+
+        let name_validation_result = validations::validate_config_file_name(&new_configuration_name);
+        match name_validation_result {
+            Ok(_) => {},
+            Err(error) => {
+                cliclack::outro(style(format!("{}", error)).yellow().italic())?;
+                continue;
+            }
+        }
 
         let new_username: String = cliclack::input("Enter username")
             .placeholder("your-username")
