@@ -1,9 +1,9 @@
 [package]
 name = "connector"
-version = "1.0.0"
+version = "1.0.1"
 authors = ["Petr Sapak <petr.sapak@yahoo.com>"]
 edition = "2021"
-description = "CLI for automation of SMB connection creation."
+description = "CLI for automation server connection creation."
 license = "MIT"
 readme = "README.md"
 repository = "https://github.com/petrsapak/connector"
