@@ -12,7 +12,7 @@ fn main() -> std::io::Result<()> {
     const VERSION: &str = env!("CARGO_PKG_VERSION");
     cliclack::intro(style(format!(" Connector v{}", VERSION)).green().bold())?;
 
-    let mut valid_config_file_paths: Vec<(String, String, String)> = validations::invoke();
+    let valid_config_file_paths: Vec<(String, String, String)> = validations::invoke();
     let mut selected_configurations: Vec<String> = Vec::new();
 
     match valid_config_file_paths.len() {
@@ -21,7 +21,7 @@ fn main() -> std::io::Result<()> {
             match start_first_time_setup {
                 true => {
                     let _ = configurations::create_configuration();
-                    valid_config_file_paths = validations::invoke();
+                    validations::invoke();
                 },
                 false => {
                     cliclack::outro(style("Finished!").yellow().italic())?;
@@ -64,20 +64,21 @@ fn main() -> std::io::Result<()> {
 
         for (index, server) in _selected_servers.into_iter().enumerate() {
             let mut spinner = cliclack::spinner();
-            spinner.start(format!("Connecting to {}...", server));
+            let index_for_display = index + 1;
+            spinner.start(format!("[{}\\{}] Connecting to {}...", index_for_display, number_of_selected_servers, server));
             let connection_result = connections::create_connection(&format!("\\\\{}", server), Some(username), Some(&_password));
             match connection_result {
                 Ok(_) => {
-                    spinner.stop(style(format!("Connected to {}.", server)).green().bold());
+                    spinner.stop(style(format!("[{}\\{}] Connected to {}.", index_for_display, number_of_selected_servers, server)).green().bold());
                 },
                 Err(error_code) => {
-                    spinner.stop(style(format!("Failed to connect to {}.\r\n   Error code: {}: {}.", server, error_code, errors::get_error_explanation(error_code))).red().italic());
+                    spinner.stop(style(format!("[{}\\{}] Failed to connect to {}.\r\n   Error code: {}: {}.", index_for_display, number_of_selected_servers, server, error_code, errors::get_error_explanation(error_code))).red().italic());
+                    //I don't understand this condition
                     if index == number_of_selected_servers - 1 && index == number_of_selected_configurations {
                         cliclack::outro(style("Finished!").yellow().italic())?;
                         return Ok(());
                     }
-                    let continue_with_next_server = cliclack::Confirm::new("Would you like to continue?")
-                        .interact()?;
+                    let continue_with_next_server = cliclack::Confirm::new(format!("Remaining servers in the queue: {}. Would you like to continue?", number_of_selected_servers - index_for_display)).interact()?;
                     if continue_with_next_server {
                         continue;
                     } else {
