@@ -73,7 +73,6 @@ fn main() -> std::io::Result<()> {
                 },
                 Err(error_code) => {
                     spinner.stop(style(format!("[{}\\{}] Failed to connect to {}.\r\n   Error code: {}: {}.", index_for_display, number_of_selected_servers, server, error_code, errors::get_error_explanation(error_code))).red().italic());
-                    //I don't understand this condition
                     if index == number_of_selected_servers - 1 && index == number_of_selected_configurations {
                         cliclack::outro(style("Finished!").yellow().italic())?;
                         return Ok(());
