@@ -102,7 +102,7 @@ fn main() -> std::io::Result<()> {
             .interact()?;
 
         for (index, server) in _selected_servers.into_iter().enumerate() {
-            let mut spinner = cliclack::spinner();
+            let spinner = cliclack::spinner();
             let index_for_display = index + 1;
             spinner.start(format!("[{}\\{}] Connecting to {}...", index_for_display, number_of_selected_servers, server));
             let connection_result = connections::create_connection(&format!("\\\\{}", server), Some(username), Some(&_password));
@@ -116,6 +116,11 @@ fn main() -> std::io::Result<()> {
                         cliclack::outro(style("Finished!").yellow().italic())?;
                         return Ok(());
                     }
+
+                    if number_of_selected_servers - index_for_display == 0 {
+                        break;
+                    }
+
                     let continue_with_next_server = cliclack::Confirm::new(format!("Remaining servers in the queue: {}. Would you like to continue?", number_of_selected_servers - index_for_display)).interact()?;
                     if continue_with_next_server {
                         continue;

@@ -9,7 +9,7 @@ pub fn invoke() -> Vec<(String, String, String)> {
     let valid_server_list_file_paths: Vec<(String, String, String)> = server_list_file_paths
         .iter()
         .filter(|server_list_file_path| {
-            let mut validation_spinner = cliclack::spinner();
+            let validation_spinner = cliclack::spinner();
             validation_spinner.start(format!("Validating server list: {}", server_list_file_path));
             match validate_server_list_file(server_list_file_path) {
                 Ok(_) => {
