@@ -2,7 +2,7 @@ use console::style;
 use std::fs::read_to_string;
 use serde_json::Value;
 
-mod configurations;
+mod server_list;
 mod validations;
 mod errors;
 mod connections;
@@ -13,7 +13,7 @@ fn main() -> std::io::Result<()> {
     const VERSION: &str = env!("CARGO_PKG_VERSION");
     cliclack::intro(style(format!(" Connector v{}", VERSION)).green().bold())?;
 
-    let valid_config_file_paths: Vec<(String, String, String)> = validations::invoke();
+    let valid_server_list_file_paths: Vec<(String, String, String)> = validations::invoke();
 
     let env_variable_path_check = startup_checks::is_path_env_variable_set();
     match env_variable_path_check {
@@ -35,14 +35,14 @@ fn main() -> std::io::Result<()> {
         Err(_) => ()
     }
 
-    let mut selected_configurations: Vec<String> = Vec::new();
+    let mut selected_server_lists: Vec<String> = Vec::new();
 
-    match valid_config_file_paths.len() {
+    match valid_server_list_file_paths.len() {
         0 => {
-            let start_first_time_setup = cliclack::Confirm::new(style("No valid configuration files found. Would you like to create one?").yellow().bold()).interact()?;
+            let start_first_time_setup = cliclack::Confirm::new(style("No valid server list files found. Would you like to create one?").yellow().bold()).interact()?;
             match start_first_time_setup {
                 true => {
-                    let _ = configurations::create_configuration();
+                    let _ = server_list::create_server_list();
                     validations::invoke();
                 },
                 false => {
@@ -52,32 +52,49 @@ fn main() -> std::io::Result<()> {
             }
         },
         1 => {
-            selected_configurations.push(valid_config_file_paths.first().unwrap().0.clone());
+            selected_server_lists.push(valid_server_list_file_paths.first().unwrap().0.clone());
         }
         _ => {
-            selected_configurations = cliclack::multiselect("Which server list would you like to use?")
-                .items(&valid_config_file_paths)
+            selected_server_lists = cliclack::multiselect("Which list of servers would you like to use?")
+                .items(&valid_server_list_file_paths)
                 .interact()?;
         }
     }
 
-    let number_of_selected_configurations = selected_configurations.len();
+    let number_of_selected_configurations = selected_server_lists.len();
 
-    for configuration in selected_configurations {
+    for configuration in selected_server_lists {
         let configuration_content = read_to_string(&configuration)?;
         let configuration: Value = serde_json::from_str(&configuration_content)?;
         let username = configuration["username"].as_str().unwrap_or_default();
         let servers = configuration["servers"].as_array().cloned().unwrap_or_default();
-        let available_servers = servers
+        let available_servers_from_file = servers
             .iter()
             .map(|server|
                 (server["name"].as_str().unwrap_or_default(),
                  server["name"].as_str().unwrap_or_default(),
                  server["description"].as_str().unwrap_or_default())
         );
-        let _selected_servers = cliclack::multiselect(format!("Select servers to connect to (as {})", username))
-            .items(&available_servers.collect::<Vec<(_, _, _)>>())
+
+        let available_servers_default = vec![("select all","select all","")];
+
+        let mut available_servers = Vec::new();
+        available_servers.extend(available_servers_default);
+        available_servers.extend(available_servers_from_file.clone());
+
+        let mut _selected_servers = Vec::new();
+
+        let _selected_servers_by_user = cliclack::multiselect(format!("Select servers to connect to (as {})", username))
+            .items(&available_servers.iter().map(|&(a, b, c)| (a, b, c)).collect::<Vec<_>>())
             .interact()?;
+
+        if _selected_servers_by_user.contains(&"select all") {
+            _selected_servers = available_servers_from_file.into_iter().map(|server| server.0.to_string()).collect();
+        } else {
+            _selected_servers = _selected_servers_by_user.iter().map(|&server| server.to_string()).collect();
+        }
+
+
         let number_of_selected_servers = _selected_servers.len();
 
         let _password = cliclack::password("Provide password for the servers")
