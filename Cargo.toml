@@ -1,6 +1,6 @@
 [package]
 name = "connector"
-version = "1.0.2"
+version = "1.0.3"
 authors = ["Petr Sapak <petr.sapak@yahoo.com>"]
 edition = "2021"
 description = "CLI for automation server connection creation."
@@ -11,8 +11,8 @@ repository = "https://github.com/petrsapak/connector"
 [dependencies]
 dialoguer = "0.11.0"
 console = "0.15.7"
-windows-sys = { version = "0.52", features = [ "Win32_NetworkManagement_WNet", "Win32_Foundation" ] }
-cliclack = "0.1.10"
+windows-sys = { version = "0.59", features = [ "Win32_NetworkManagement_WNet", "Win32_Foundation" ] }
+cliclack = "0.3.4"
 serde = { version = "1.0", features = [ "derive" ] }
 serde_json = "1.0"
 winreg = "0.52.0"

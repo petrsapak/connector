@@ -8,16 +8,16 @@ use serde_json::json;
 
 use crate::validations;
 
-pub fn create_configuration() -> std::io::Result<()> {
+pub fn create_server_list() -> std::io::Result<()> {
 
-    let mut add_new_configuration = true;
+    let mut add_new_server_list = true;
 
-    while add_new_configuration {
-        let new_configuration_name: String = cliclack::input("Enter configuration name")
-            .placeholder("your-configuration-name")
+    while add_new_server_list {
+        let new_server_list_name: String = cliclack::input("Enter configuration name")
+            .placeholder("your-server_list-name")
             .interact()?;
 
-        let name_validation_result = validations::validate_config_file_name(&new_configuration_name);
+        let name_validation_result = validations::validate_server_list_file_name(&new_server_list_name);
         match name_validation_result {
             Ok(_) => {},
             Err(error) => {
@@ -51,19 +51,19 @@ pub fn create_configuration() -> std::io::Result<()> {
             add_new_server = cliclack::Confirm::new(style("Would you like to add another server?").yellow().bold()).interact()?;
         }
 
-        let new_configuration = json!({
+        let new_server_list = json!({
             "username": new_username,
             "servers": servers
         });
 
-        let json_string = serde_json::to_string_pretty(&new_configuration)?;
+        let json_string = serde_json::to_string_pretty(&new_server_list)?;
         let exe_path = std::env::current_exe().unwrap();
         let exe_dir = exe_path.parent().unwrap();
-        let new_configuration_path = Path::new(&exe_dir).join(format!("{}.json", new_configuration_name));
-        let mut file = File::create(new_configuration_path)?;
+        let new_server_list_path = Path::new(&exe_dir).join(format!("{}.json", new_server_list_name));
+        let mut file = File::create(new_server_list_path)?;
         file.write_all(json_string.as_bytes())?;
 
-        add_new_configuration = cliclack::Confirm::new(style("Would you like to add another configuration?").yellow().bold()).interact()?;
+        add_new_server_list = cliclack::Confirm::new(style("Would you like to add another configuration?").yellow().bold()).interact()?;
 
     }
 
