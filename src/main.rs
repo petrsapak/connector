@@ -4,8 +4,12 @@ use serde_json::Value;
 
 mod server_list;
 mod validations;
+#[cfg(target_os = "windows")]
 mod errors;
+#[cfg(target_os = "windows")]
 mod connections;
+#[cfg(target_os = "linux")]
+mod connections_linux;
 mod startup_checks;
 
 fn main() -> std::io::Result<()> {
@@ -67,16 +71,38 @@ fn main() -> std::io::Result<()> {
         let configuration_content = read_to_string(&configuration)?;
         let configuration: Value = serde_json::from_str(&configuration_content)?;
         let username = configuration["username"].as_str().unwrap_or_default();
+        #[cfg(target_os = "linux")]
+        let mount_target = configuration["mount_target"].as_str().unwrap_or_default();
         let servers = configuration["servers"].as_array().cloned().unwrap_or_default();
+
+        #[cfg(target_os = "windows")]
         let available_servers_from_file = servers
             .iter()
             .map(|server|
-                (server["name"].as_str().unwrap_or_default(),
-                 server["name"].as_str().unwrap_or_default(),
-                 server["description"].as_str().unwrap_or_default())
+                (server["name"].as_str().unwrap_or_default().to_string(),
+                 server["name"].as_str().unwrap_or_default().to_string(),
+                 server["description"].as_str().unwrap_or_default().to_string())
         );
 
-        let available_servers_default = vec![("select all","select all","")];
+        #[cfg(target_os = "linux")]
+        let available_servers_from_file = servers
+            .iter()
+            .flat_map(|server| {
+                server["shares"].as_array().cloned().unwrap_or_default().into_iter().map(|share| {
+                    let full_name = format!(
+                        "{}/{}",
+                        server["name"].as_str().unwrap_or_default(),
+                        share["name"].as_str().unwrap_or_default()
+                    );
+                    (
+                        full_name.clone(),
+                        full_name,
+                        share["description"].as_str().unwrap_or_default().to_string(),
+                    )
+                })
+            });
+
+        let available_servers_default = vec![("select all".to_string(), "select all".to_string(),"".to_string())];
 
         let mut available_servers = Vec::new();
         available_servers.extend(available_servers_default);
@@ -85,13 +111,13 @@ fn main() -> std::io::Result<()> {
         let mut _selected_servers = Vec::new();
 
         let _selected_servers_by_user = cliclack::multiselect(format!("Select servers to connect to (as {})", username))
-            .items(&available_servers.iter().map(|&(a, b, c)| (a, b, c)).collect::<Vec<_>>())
+            .items(&available_servers)
             .interact()?;
 
-        if _selected_servers_by_user.contains(&"select all") {
-            _selected_servers = available_servers_from_file.into_iter().map(|server| server.0.to_string()).collect();
+        if _selected_servers_by_user.contains(&&"select all".to_string()) {
+            _selected_servers = available_servers_from_file.into_iter().map(|server: (String, String, String)| server.0.to_string()).collect();
         } else {
-            _selected_servers = _selected_servers_by_user.iter().map(|&server| server.to_string()).collect();
+            _selected_servers = _selected_servers_by_user.iter().map(|server| server.to_string()).collect();
         }
 
 
@@ -105,13 +131,19 @@ fn main() -> std::io::Result<()> {
             let spinner = cliclack::spinner();
             let index_for_display = index + 1;
             spinner.start(format!("[{}\\{}] Connecting to {}...", index_for_display, number_of_selected_servers, server));
+            #[cfg(target_os = "windows")]
             let connection_result = connections::create_connection(&format!("\\\\{}", server), Some(username), Some(&_password));
+            #[cfg(target_os = "linux")]
+            let connection_result = connections_linux::mount_share(server.as_str(), Some(mount_target), Some(username), Some(&_password));
             match connection_result {
                 Ok(_) => {
                     spinner.stop(style(format!("[{}\\{}] Connected to {}.", index_for_display, number_of_selected_servers, server)).green().bold());
                 },
                 Err(error_code) => {
+                    #[cfg(target_os = "windows")]
                     spinner.stop(style(format!("[{}\\{}] Failed to connect to {}.\r\n   Error code: {}: {}.", index_for_display, number_of_selected_servers, server, error_code, errors::get_error_explanation(error_code))).red().italic());
+                    #[cfg(target_os = "linux")]
+                    spinner.stop(style(format!("[{}\\{}] Failed to connect to {}.\r\n   Error: {}.", index_for_display, number_of_selected_servers, server, error_code)).red().italic());
                     if index == number_of_selected_servers - 1 && index == number_of_selected_configurations {
                         cliclack::outro(style("Finished!").yellow().italic())?;
                         return Ok(());

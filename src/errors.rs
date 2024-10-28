@@ -1,3 +1,4 @@
+#[cfg(target_os = "windows")]
 pub fn get_error_explanation(error_code: i32) -> String {
     match error_code {
         5 => "Access denied".to_string(),
