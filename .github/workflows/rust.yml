@@ -13,7 +13,16 @@ env:
 
 jobs:
   build:
-    runs-on: windows-latest
+    strategy:
+      matrix:
+        platform: [windows, linux]
+        include:
+          - platform: windows
+            os: windows-latest
+          - platform: linux
+            os: ubuntu-latest
+
+    runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v3
     - name: Build
@@ -23,8 +32,8 @@ jobs:
     - name: Upload artifacts
       uses: actions/upload-artifact@v2
       with:
-        name: connector
-        path: target/debug/connector.exe
+        name: connector-${{ matrix.platform }}
+        path: target/debug/${{ matrix.platform == 'windows' && 'connector.exe' || 'connector' }}
 
   upload-release-asset:
     if: github.event_name == 'release'
@@ -34,7 +43,9 @@ jobs:
       - name: Download artifact
         uses: actions/download-artifact@v2
         with:
-          name: connector
+          path: connector
+          pattern: connector-*
+          merge-multiple: true
       - name: Upload release asset
         uses: actions/upload-release-asset@v1
         env:
