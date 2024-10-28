@@ -53,7 +53,7 @@ pub fn create_server_list() -> std::io::Result<()> {
             let mut shares: Vec<Value> = Vec::new();
 
             while add_new_share {
-                let share_name: String = cliclack::input("Enter share name")
+                let share_name: String = cliclack::input(format!("Enter share name (@{})", server_name))
                     .placeholder("my-share")
                     .interact()?;
 
@@ -67,7 +67,7 @@ pub fn create_server_list() -> std::io::Result<()> {
                     "description": share_description
                 }));
 
-                add_new_share = cliclack::Confirm::new(style("Would you like to add another share to the server?").yellow().bold()).interact()?;
+                add_new_share = cliclack::Confirm::new(style(format!("Would you like to add another share to {}?", server_name)).yellow().bold()).interact()?;
             }
 
             servers.push(json!({
