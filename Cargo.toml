@@ -20,4 +20,4 @@ windows-sys = { version = "0.59", features = [ "Win32_NetworkManagement_WNet", "
 winreg = "0.52.0"
 
 [target.'cfg(unix)'.dependencies]
-rustix = { version = "0.38.37", features = [ "mount" ] }
+rustix = { version = "0.38.37", features = [ "mount", "process" ] }

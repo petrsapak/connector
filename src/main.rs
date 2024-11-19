@@ -39,6 +39,11 @@ fn main() -> std::io::Result<()> {
         Err(_) => ()
     }
 
+    #[cfg(target_os = "linux")]
+    if valid_server_list_file_paths.len() > 0 && !rustix::process::getuid().is_root() {
+        return Err(std::io::Error::new(std::io::ErrorKind::PermissionDenied, "Connector has to run under root to mount smb shares"));
+    }
+
     let mut selected_server_lists: Vec<String> = Vec::new();
 
     match valid_server_list_file_paths.len() {
