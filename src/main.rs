@@ -114,7 +114,7 @@ fn main() -> std::io::Result<()> {
             .items(&available_servers)
             .interact()?;
 
-        if _selected_servers_by_user.contains(&&"select all".to_string()) {
+        if _selected_servers_by_user.contains(&"select all".to_string()) {
             _selected_servers = available_servers_from_file.into_iter().map(|server: (String, String, String)| server.0.to_string()).collect();
         } else {
             _selected_servers = _selected_servers_by_user.iter().map(|server| server.to_string()).collect();

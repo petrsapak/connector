@@ -8,14 +8,20 @@ pub fn mount_share(
     username: Option<&str>,
     password: Option<&str>,
 ) -> Result<(), Errno> {
-    let mut user = username.as_ref().unwrap().splitn(2, "\\");
-    let options = format!(
-        "username={},password={},domain={}",
-        user.next().unwrap(),
-        password.as_ref().unwrap(),
-        user.next().unwrap_or("")
-    );
-    let target_path = format!("{}/{}", mount_target.as_ref().unwrap(), source_path);
+    let user: Vec<&str> = username.unwrap().split("\\").collect();
+
+    let options = if user.len() == 2 {
+        format!(
+            "domain={},username={},password={}",
+            user[0],
+            user[1],
+            password.unwrap()
+        )
+    } else {
+        format!("username={},password={}", user[0], password.unwrap())
+    };
+
+    let target_path = format!("{}/{}", mount_target.unwrap(), source_path);
 
     mount(
         format!("//{}", source_path),
