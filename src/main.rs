@@ -139,7 +139,7 @@ fn main() -> std::io::Result<()> {
             #[cfg(target_os = "windows")]
             let connection_result = connections::create_connection(&format!("\\\\{}", server), Some(username), Some(&_password));
             #[cfg(target_os = "linux")]
-            let connection_result = connections_linux::mount_share(server.as_str(), Some(mount_target), Some(username), Some(&_password));
+            let connection_result = connections_linux::mount_share(server.as_str(), mount_target, username, &_password);
             match connection_result {
                 Ok(_) => {
                     spinner.stop(style(format!("[{}\\{}] Connected to {}.", index_for_display, number_of_selected_servers, server)).green().bold());
