@@ -11,8 +11,15 @@ repository = "https://github.com/petrsapak/connector"
 [dependencies]
 dialoguer = "0.11.0"
 console = "0.15.7"
-windows-sys = { version = "0.59", features = [ "Win32_NetworkManagement_WNet", "Win32_Foundation" ] }
 cliclack = "0.3.4"
 serde = { version = "1.0", features = [ "derive" ] }
 serde_json = "1.0"
+anyhow = "1.0.93"
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.59", features = [ "Win32_NetworkManagement_WNet", "Win32_Foundation" ] }
 winreg = "0.52.0"
+
+[target.'cfg(unix)'.dependencies]
+rustix = { version = "0.38.37", features = [ "mount", "process" ] }
+regex = "1.11.1"

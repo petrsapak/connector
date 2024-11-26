@@ -1,7 +1,11 @@
-use windows_sys::Win32::Foundation::NO_ERROR;
-use windows_sys::Win32::NetworkManagement::WNet;
-use std::ffi::CString;
+#[cfg(target_os = "windows")]
+use {
+    windows_sys::Win32::Foundation::NO_ERROR,
+    windows_sys::Win32::NetworkManagement::WNet,
+    std::ffi::CString,
+};
 
+#[cfg(target_os = "windows")]
 pub fn create_connection(server: &str, username: Option<&str>, password: Option<&str>) -> Result<(), i32>
 {
     let mut resources = WNet::NETRESOURCEA {
