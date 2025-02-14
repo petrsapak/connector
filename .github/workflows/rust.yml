@@ -54,6 +54,8 @@ jobs:
 
       - name: Release
         uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_PAT }}
         with:
           draft: false
           generate_release_notes: true
