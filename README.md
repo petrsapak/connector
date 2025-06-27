@@ -5,7 +5,7 @@
 [![github.com](https://img.shields.io/badge/connector-blue?logo=github&labelColor=black)](https://github.com/petrsapak/connector)
 [![license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/petrsapak/connector/blob/main/LICENSE)
 
-Connector is a CLI tool for convenient mapping creation for frequently used network storage. Supports Windows and Linux. Based on [![github.com](https://img.shields.io/badge/cliclack-green?logo=github&labelColor=black)](https://github.com/fadeevab/cliclack).
+Connector is a CLI tool for convenient SMB mapping creation. Supports Windows and Linux. Based on [![github.com](https://img.shields.io/badge/cliclack-green?logo=github&labelColor=black)](https://github.com/fadeevab/cliclack).
 
 
 ### Installation
