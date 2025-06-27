@@ -33,17 +33,17 @@ For larger or more complex sets of drive mappings, it's recommended to create th
   "servers": [
     {
       "description": "",              // Optional: A friendly description of the server
-      "name": "192.168.0.1\movies",   // Server hostname or alias (e.g., movies.local or IP)
+      "name": "192.168.0.1\\movies",  // Server hostname or alias (e.g., movies.local or IP)
       "shares": []                    // List of share names to mount from this server (linux)
     },
     {
       "description": "",
-      "name": "192.168.0.1\music",
+      "name": "192.168.0.1\\music",
       "shares": []
     },
     {
       "description": "",
-      "name": "192.168.0.1\photos",
+      "name": "192.168.0.1\\photos",
       "shares": []
     }
   ],
