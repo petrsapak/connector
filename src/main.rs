@@ -23,14 +23,13 @@ fn main() -> std::io::Result<()> {
     match env_variable_path_check {
         Ok(true) => (),
         Ok(false) => {
-            let add_to_path = cliclack::Confirm::new(style("The PATH environment variable is not set. Would you like to set it now?").yellow().bold()).interact()?;
+            let add_to_path = cliclack::Confirm::new(style("Would you like to add connector to PATH environment variable?").yellow().bold()).interact()?;
             match add_to_path {
                 true => {
                     let add_to_path_env_result = startup_checks::add_to_path_evn_variable();
                     match add_to_path_env_result {
-                        Ok(_) => cliclack::outro(style("The PATH environment variable has been set.").green().bold())?,
-                        Err(error) => cliclack::outro(style(format!("Failed to set the PATH environment variable. {}. You need to have admin rights.", error)).red().bold())?
-
+                        Ok(_) => cliclack::outro(style("The PATH environment variable has been updated.").green().bold())?,
+                        Err(error) => cliclack::outro(style(format!("Failed to update the PATH environment variable. {}. You need to have admin rights.", error)).red().bold())?
                     }
                 },
                 false => ()
